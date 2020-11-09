@@ -3,33 +3,58 @@
 
   var messageBanner;
 
-  // The Office initialize function must be run each time a new page is loaded.
-  Office.initialize = function (reason) {
+  Office.onReady(function () {
+    // Office is ready
     $(document).ready(function () {
       var element = document.querySelector('.MessageBanner');
       messageBanner = new components.MessageBanner(element);
       messageBanner.hideBanner();
-      loadProps();
-    });
-  };
 
-  $(document).ready(function () {
-    $.ajax({
-      url: '/api/Web',
-      accepts: 'application/json'
-    })
-      .done((response) => {
-        var selDiv = document.getElementById('selCustomer');
-        var sel = document.createElement('select');
-        response.forEach((val) => {
-          var opt = document.createElement("option");
-          opt.value = val.ID;
-          opt.text = val.Name;
-          sel.options.add(opt);        
-        });
-        selDiv.appendChild(sel);
-      });
+      var btn = document.getElementById('graphBtn');
+      btn.addEventListener('click', accessMicrosoftGraph);
+    });
   });
+
+  //$(document).ready(function () {
+  //  $.ajax({
+  //    url: '/api/Web',
+  //    accepts: 'application/json'
+  //  })
+  //    .done((response) => {
+  //      var selDiv = document.getElementById('selCustomer');
+  //      var sel = document.createElement('select');
+  //      response.forEach((val) => {
+  //        var opt = document.createElement("option");
+  //        opt.value = val.ID;
+  //        opt.text = val.Name;
+  //        sel.options.add(opt);        
+  //      });
+  //      selDiv.appendChild(sel);
+  //    });
+  //});
+
+  async function accessMicrosoftGraph() {
+    let bootstrapToken = await OfficeRuntime.auth.getAccessToken();
+    const mailID = Office.context.mailbox.item.itemId;
+    const requestBody = { MessageID: mailID };
+    $.ajax({
+      type: "POST",
+      url: '/api/Web/GetMimeMessage',
+      headers: {
+        "Authorization": "Bearer " + bootstrapToken
+      },
+      data: JSON.stringify(requestBody),
+      contentType: "application/json; charset=utf-8"
+    }).done(function (data) {
+      console.log(data);
+      // renderItems(data);
+    }).fail(function (error) {
+      console.log(error);
+    }).always(function () {
+      // Cleanup
+    });
+  }
+
   // Helper function for displaying notifications
   function showNotification(header, content) {
     $("#notificationHeader").text(header);

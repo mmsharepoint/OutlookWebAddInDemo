@@ -14,7 +14,7 @@ namespace OutlookWebAddIn2Web
             config.Routes.MapHttpRoute(
               name: "ActionApi",
               routeTemplate: "api/{controller}/{action}/{query}",
-              defaults: new { id = RouteParameter.Optional }
+              defaults: new { query = RouteParameter.Optional }
               );
 
             config.Routes.MapHttpRoute(
