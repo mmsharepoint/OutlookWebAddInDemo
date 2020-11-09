@@ -12,26 +12,31 @@
 
       var btn = document.getElementById('graphBtn');
       btn.addEventListener('click', accessMicrosoftGraph);
+      getCustomers();
     });
   });
 
-  //$(document).ready(function () {
-  //  $.ajax({
-  //    url: '/api/Web',
-  //    accepts: 'application/json'
-  //  })
-  //    .done((response) => {
-  //      var selDiv = document.getElementById('selCustomer');
-  //      var sel = document.createElement('select');
-  //      response.forEach((val) => {
-  //        var opt = document.createElement("option");
-  //        opt.value = val.ID;
-  //        opt.text = val.Name;
-  //        sel.options.add(opt);        
-  //      });
-  //      selDiv.appendChild(sel);
-  //    });
-  //});
+  async function getCustomers() {
+    let bootstrapToken = await OfficeRuntime.auth.getAccessToken();
+    $.ajax({
+      url: '/api/Web',
+      accepts: 'application/json',
+      headers: {
+        "Authorization": "Bearer " + bootstrapToken // Used here to pass authorization in WebController
+      },
+    })
+      .done((response) => {
+        var selDiv = document.getElementById('selCustomer');
+        var sel = document.createElement('select');
+        response.forEach((val) => {
+          var opt = document.createElement("option");
+          opt.value = val.ID;
+          opt.text = val.Name;
+          sel.options.add(opt);        
+        });
+        selDiv.appendChild(sel);
+      });
+  }
 
   async function accessMicrosoftGraph() {
     let bootstrapToken = await OfficeRuntime.auth.getAccessToken();

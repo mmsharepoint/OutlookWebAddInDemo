@@ -118,8 +118,8 @@ namespace OutlookWebAddIn2Web.Controllers
         // All other MsalServiceExceptions.
         return String.Format("Error while exchanging to access token", e.Message);
       }
-  }
-  public Customer Get(string id)
+    }
+    public Customer Get(string id)
     {
       return data.FirstOrDefault(c => c.ID == id);
     }
