@@ -40,60 +40,19 @@ namespace OutlookWebAddIn2Web.Controllers
     // api/<controller>/GetMimeMessage
     [HttpPost]
     public async Task<IHttpActionResult> GetMimeMessage([FromBody] MimeMail request)
-    {
-      
+    {      
       if (Request.Headers.Contains("Authorization") && request.IsValid())
       {
-        var scopes = ClaimsPrincipal.Current.Claims;
-        var identities = ClaimsPrincipal.Current.Identities;
-        var scopeClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope");
-        if (scopeClaim != null)
+        string accessToken = await this.GetAccessToken();
+        if (accessToken.StartsWith("Error"))
         {
-          // Check the allowed scopes
-          string[] addinScopes = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value.Split(' ');
-          if (!addinScopes.Contains("access_as_user"))
-          {
-            var msg = new HttpResponseMessage(HttpStatusCode.Unauthorized) { ReasonPhrase = "Missing access_as_user." };
-            throw new HttpResponseException(msg);
-          }
+          return BadRequest(accessToken);
         }
         else
         {
-          return BadRequest("The bearer token is invalid.");
-        }
-
-        string bootstrapContext = ClaimsPrincipal.Current.Identities.First().BootstrapContext.ToString();
-        UserAssertion userAssertion = new UserAssertion(bootstrapContext);
-
-        string authority = String.Format(ConfigurationManager.AppSettings["Authority"], ConfigurationManager.AppSettings["DirectoryID"]);
-
-
-         var cca = ConfidentialClientApplicationBuilder.Create(ConfigurationManager.AppSettings["ClientID"])
-                                                        .WithRedirectUri("https://localhost:44384")
-                                                        .WithClientSecret(ConfigurationManager.AppSettings["ClientSecret"])
-                                                        .WithAuthority(authority)
-                                                        .Build();
-
-        string[] graphScopes = { "https://graph.microsoft.com/Mail.Read" };
-        AcquireTokenOnBehalfOfParameterBuilder parameterBuilder = null;
-        AuthenticationResult authResult = null;
-        string mimeMailContent = String.Empty;
-        try
-        {
-          parameterBuilder = cca.AcquireTokenOnBehalfOf(graphScopes, userAssertion);
-          authResult = await parameterBuilder.ExecuteAsync();
-          mimeMailContent = await this.GetMime(authResult.AccessToken, request.MessageID);
-        }
-        catch (MsalServiceException e)
-        {
-          // TODO 3a: Handle request for multi-factor authentication.
-
-          // TODO 3b: Handle lack of consent and invalid scope (permission).
-
-          // TODO 3c: Handle all other MsalServiceExceptions.
-          return BadRequest("Error while exchanging to access token");
-        }
-        return Content(HttpStatusCode.OK, mimeMailContent);
+          string mimeMailContent = await this.GetMime(accessToken, request.MessageID);
+          return Content(HttpStatusCode.OK, mimeMailContent);
+        }        
       }
       else
       {
@@ -101,7 +60,66 @@ namespace OutlookWebAddIn2Web.Controllers
       }
     }
 
-    public Customer Get(string id)
+    private async Task<string> GetAccessToken()
+    {
+      var scopes = ClaimsPrincipal.Current.Claims;
+      var identities = ClaimsPrincipal.Current.Identities;
+      var scopeClaim = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope");
+      if (scopeClaim != null)
+      {
+        // Check the allowed scopes
+        string[] addinScopes = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value.Split(' ');
+        if (!addinScopes.Contains("access_as_user"))
+        {
+          var msg = new HttpResponseMessage(HttpStatusCode.Unauthorized) { ReasonPhrase = "Missing access_as_user." };
+          throw new HttpResponseException(msg);
+        }
+      }
+      else
+      {
+        return "Error: The bearer token is invalid.";
+      }
+
+      string bootstrapContext = ClaimsPrincipal.Current.Identities.First().BootstrapContext.ToString();
+      UserAssertion userAssertion = new UserAssertion(bootstrapContext);
+
+      string authority = String.Format(ConfigurationManager.AppSettings["Authority"], ConfigurationManager.AppSettings["DirectoryID"]);
+
+
+      var cca = ConfidentialClientApplicationBuilder.Create(ConfigurationManager.AppSettings["ClientID"])
+                                                     .WithRedirectUri("https://localhost:44384")
+                                                     .WithClientSecret(ConfigurationManager.AppSettings["ClientSecret"])
+                                                     .WithAuthority(authority)
+                                                     .Build();
+
+      string[] graphScopes = { "https://graph.microsoft.com/Mail.Read" };
+      AcquireTokenOnBehalfOfParameterBuilder parameterBuilder = null;
+      AuthenticationResult authResult = null;
+      string mimeMailContent = String.Empty;
+      try
+      {
+        parameterBuilder = cca.AcquireTokenOnBehalfOf(graphScopes, userAssertion);
+        authResult = await parameterBuilder.ExecuteAsync();
+        return authResult.AccessToken;
+      }
+      catch (MsalServiceException e)
+      {
+        // multi-factor authentication.
+        if (e.Message.StartsWith("AADSTS50076"))
+        {
+          string responseMessage = String.Format("Error: {{\"AADError\":\"AADSTS50076\",\"Claims\":{0}}}", e.Claims);
+          return responseMessage;
+        }
+        // Lack of consent and invalid scope (permission).
+        if ((e.Message.StartsWith("AADSTS65001")) || (e.Message.StartsWith("AADSTS70011: The provided value for the input parameter 'scope' is not valid.")))
+        {
+          return  String.Format("Error: Forbidden {0}", e.Message);
+        }
+        // All other MsalServiceExceptions.
+        return String.Format("Error while exchanging to access token", e.Message);
+      }
+  }
+  public Customer Get(string id)
     {
       return data.FirstOrDefault(c => c.ID == id);
     }

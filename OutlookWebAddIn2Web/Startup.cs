@@ -7,11 +7,11 @@ using Microsoft.Owin.Security.Jwt;
 using Microsoft.Owin.Security.OAuth;
 using Owin;
 
-[assembly: OwinStartup(typeof(OutlookWebAddIn2Web.Startup1))]
+[assembly: OwinStartup(typeof(OutlookWebAddIn2Web.Startup))]
 
 namespace OutlookWebAddIn2Web
 {
-  public class Startup1
+  public class Startup
   {
     public void Configuration(IAppBuilder app)
     {
