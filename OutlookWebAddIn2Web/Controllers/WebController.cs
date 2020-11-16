@@ -85,10 +85,11 @@ namespace OutlookWebAddIn2Web.Controllers
 
       string authority = String.Format(ConfigurationManager.AppSettings["Authority"], ConfigurationManager.AppSettings["DirectoryID"]);
 
-
-      var cca = ConfidentialClientApplicationBuilder.Create(ConfigurationManager.AppSettings["ClientID"])
+      string appID = ConfigurationManager.AppSettings["OutlookWebAddIn2AppID"];
+      string appSecret = ConfigurationManager.AppSettings["OutlookWebAddIn2AppSecret"];
+      var cca = ConfidentialClientApplicationBuilder.Create(appID)
                                                      .WithRedirectUri("https://localhost:44384")
-                                                     .WithClientSecret(ConfigurationManager.AppSettings["ClientSecret"])
+                                                     .WithClientSecret(appSecret)
                                                      .WithAuthority(authority)
                                                      .Build();
 

@@ -46,6 +46,7 @@
     <None Include="OutlookWebAddIn2Manifest\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{7c87653c-f215-481d-bd6e-f5b33184c02b}</SharePointProjectItemId>
     </None>
+    <Content Include="OutlookWebAddIn2Manifest\OutlookWebAddIn2 - Azure.xml" />
     <Content Include="OutlookWebAddIn2Manifest\OutlookWebAddIn2.xml">
       <OpcRelationship>manifest-oemanifest</OpcRelationship>
     </Content>
