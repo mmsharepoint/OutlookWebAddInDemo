@@ -40,6 +40,7 @@
 
   async function accessMicrosoftGraph() {
     let bootstrapToken = await OfficeRuntime.auth.getAccessToken();
+    renderAttachments(bootstrapToken);
     const mailID = Office.context.mailbox.item.itemId;
     const requestBody = { MessageID: mailID };
     $.ajax({
@@ -60,6 +61,59 @@
     });
   }
 
+  async function renderAttachments(bootstrapToken) {
+    const mailID = Office.context.mailbox.item.itemId;
+    const restMailID = Office.context.mailbox.convertToRestId(mailID, Office.MailboxEnums.RestVersion.v2_0);
+    const requestBody = { MessageID: restMailID };
+    $.ajax({
+      url: '/api/Web/GetAttachments',
+      type: 'POST',
+      accepts: 'application/json',
+      headers: {
+        "Authorization": "Bearer " + bootstrapToken // Used here to pass authorization in WebController
+      },
+      data: JSON.stringify(requestBody),
+      contentType: "application/json; charset=utf-8"
+    }).done(function (data) {
+      console.log(data);
+      var list = document.getElementById('attachmentsList');
+      data.forEach((doc) => {
+        var listItem = document.createElement('li');
+        listItem.innerHTML = '<input type="checkbox" data-docID="' + doc.id + '" data-docName="' + doc.name + '" /> ' + doc.name;
+        list.appendChild(listItem);
+      });
+      var savBtn = document.getElementById('saveAttachments');
+      savBtn.addEventListener('click', saveAttachments);
+    }).fail(function (error) {
+      console.log(error);
+    });
+  }
+  async function saveAttachments() {
+    let bootstrapToken = await OfficeRuntime.auth.getAccessToken();
+    var attachments = document.querySelectorAll('.mmAttachmentList input[type="checkbox"]:checked');
+    var attArr = Array.from(attachments);
+    var selectedDocs = [];
+    attArr.forEach((sel) => {
+      selectedDocs.push({ id: sel.getAttribute('data-docID'), filename: sel.getAttribute('data-docName') });
+    });
+    const mailID = Office.context.mailbox.item.itemId;
+    const restMailID = Office.context.mailbox.convertToRestId(mailID, Office.MailboxEnums.RestVersion.v2_0);
+    const requestBody = { Attachments: selectedDocs, MessageID: restMailID };
+    $.ajax({
+      url: '/api/Web/SaveAttachments',
+      type: 'POST',
+      accepts: 'application/json',
+      headers: {
+        "Authorization": "Bearer " + bootstrapToken // Used here to pass authorization in WebController
+      },
+      data: JSON.stringify(requestBody),
+      contentType: "application/json; charset=utf-8"
+    }).done(function (data) {
+      console.log(data);
+    }).fail(function (error) {
+      console.log(error);
+    });
+  }
   // Helper function for displaying notifications
   function showNotification(header, content) {
     $("#notificationHeader").text(header);

@@ -713,6 +713,8 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\Attachment.cs" />
+    <Compile Include="Models\AttachmentsReq.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\MimeMail.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
